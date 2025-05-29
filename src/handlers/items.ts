@@ -9,7 +9,7 @@ import { generateShortId } from '../utils/idGenerator';
 /**
  * Truncates text to max length with ellipsis if needed
  */
-function truncate(text: string, maxLength = 50) {
+function truncate(text: string, maxLength = 36) {
 	return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 }
 
@@ -97,13 +97,34 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 
 	let message = `📋 Your items (${userItems.length}/${maxItems}):`;
 	for (const item of userItems) {
+		// Get lowest price from history
+		const lowestPriceRecord = await db
+			.select()
+			.from(priceHistory)
+			.where(eq(priceHistory.itemId, item.id))
+			.orderBy(priceHistory.price)
+			.limit(1)
+			.get();
+
 		message += `\n\n🆔 ${item.shortId}`;
 		message += `\n📌 ${truncate(item.title)}`;
-		message += `\n💰 Rp${item.currentPrice.toLocaleString('id-ID')}`;
-		if (item.targetPrice) {
-			message += ` 🎯 Rp${item.targetPrice.toLocaleString('id-ID')}`;
+		message += `\n💰 Cur: Rp${item.currentPrice.toLocaleString('id-ID')} (${new Date(item.lastChecked).toLocaleString()})`;
+
+		if (lowestPriceRecord) {
+			const priceDiff = item.currentPrice - lowestPriceRecord.price;
+			const diffSign = priceDiff >= 0 ? '📈 +' : '📉 ';
+			if (priceDiff === 0) {
+				message += '\n⬇️ Low: -';
+			} else {
+				message += `\n⬇️ Low: Rp${lowestPriceRecord.price.toLocaleString('id-ID')} (${diffSign}Rp${Math.abs(priceDiff).toLocaleString(
+					'id-ID'
+				)}) (${new Date(lowestPriceRecord.recordedAt).toLocaleString()})`;
+			}
 		}
-		message += `\n⏰ ${new Date(item.lastChecked).toLocaleTimeString()}`;
+
+		if (item.targetPrice) {
+			message += `\n🎯 Target: Rp${item.targetPrice.toLocaleString('id-ID')}`;
+		}
 	}
 
 	await ctx.reply(message);
