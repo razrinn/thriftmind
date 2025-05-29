@@ -117,12 +117,18 @@ export async function handleDeleteCommand(ctx: CommandContext<Context>, db: Retu
 		throw new BotError('Missing ID', 'Please provide item ID. Usage: /delete <item-id>');
 	}
 
-	// Find and delete item
-	const deleted = await db.delete(items).where(eq(items.shortId, shortId)).returning().get();
+	// First check if item exists and belongs to user
+	const item = await db.select().from(items).where(eq(items.shortId, shortId)).get();
 
-	if (!deleted || deleted.userId !== userId) {
-		throw new BotError('Not found', "❌ Item not found or you don't have permission");
+	if (!item) {
+		throw new BotError('Not found', '❌ Item not found');
 	}
 
-	await ctx.reply(`✅ Deleted: ${truncate(deleted.title)}`);
+	if (item.userId !== userId) {
+		throw new BotError('Permission denied', '❌ You can only delete your own items');
+	}
+
+	// Delete the item
+	await db.delete(items).where(eq(items.shortId, shortId));
+	await ctx.reply(`✅ Deleted: ${truncate(item.title)}`);
 }
