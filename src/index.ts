@@ -5,15 +5,6 @@ import { eq } from 'drizzle-orm';
 import { users, items, priceHistory } from './db/schema';
 import { scrapeTokopedia, isValidTokopediaUrl, ScrapingError } from './scrapers/tokopedia';
 
-interface CustomContext {
-	db: ReturnType<typeof drizzle>;
-	env: Env;
-}
-
-declare module 'grammy' {
-	interface Context extends CustomContext {}
-}
-
 class BotError extends Error {
 	constructor(message: string, public userFriendlyMessage: string) {
 		super(message);
@@ -27,12 +18,6 @@ const app = new Hono<{ Bindings: Env }>();
  * Middleware to handle common bot setup
  */
 function setupBotMiddleware(bot: Bot) {
-	// Database setup
-	bot.use(async (ctx, next) => {
-		ctx.db = drizzle(ctx.env.DB);
-		await next();
-	});
-
 	// Error handling middleware
 	bot.use(async (ctx, next) => {
 		try {
@@ -56,16 +41,16 @@ function setupBotMiddleware(bot: Bot) {
 /**
  * Handles the /start command - user registration
  */
-async function handleStartCommand(ctx: CommandContext<Context>) {
+async function handleStartCommand(ctx: CommandContext<Context>, db: ReturnType<typeof drizzle>) {
 	const userId = ctx.from?.id.toString();
 	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
 
-	const user = await ctx.db.select().from(users).where(eq(users.id, userId)).get();
+	const user = await db.select().from(users).where(eq(users.id, userId)).get();
 
 	if (user) {
 		await ctx.reply(`Welcome back, ${user.firstName}! What do you want to track today?`);
 	} else {
-		await ctx.db.insert(users).values({
+		await db.insert(users).values({
 			id: userId,
 			username: ctx.from?.username ?? null,
 			firstName: ctx.from?.first_name ?? 'User',
@@ -79,7 +64,7 @@ async function handleStartCommand(ctx: CommandContext<Context>) {
 /**
  * Handles the /add command - adding new items to track
  */
-async function handleAddCommand(ctx: CommandContext<Context>) {
+async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnType<typeof drizzle>) {
 	const userId = ctx.from?.id.toString();
 	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
 
@@ -95,7 +80,7 @@ async function handleAddCommand(ctx: CommandContext<Context>) {
 	}
 
 	// Check if user exists
-	const user = await ctx.db.select().from(users).where(eq(users.id, userId)).get();
+	const user = await db.select().from(users).where(eq(users.id, userId)).get();
 	if (!user) {
 		throw new BotError('Unregistered user', 'Please use /start first to register your account.');
 	}
@@ -105,7 +90,7 @@ async function handleAddCommand(ctx: CommandContext<Context>) {
 
 	// Insert new item
 	const itemId = `item_${Date.now()}`;
-	await ctx.db.insert(items).values({
+	await db.insert(items).values({
 		id: itemId,
 		url,
 		title: product.title,
@@ -116,7 +101,7 @@ async function handleAddCommand(ctx: CommandContext<Context>) {
 	});
 
 	// Record initial price
-	await ctx.db.insert(priceHistory).values({
+	await db.insert(priceHistory).values({
 		id: `ph_${Date.now()}`,
 		itemId,
 		price: product.price,
@@ -150,9 +135,10 @@ app
 	.post('/webhook', (c) => {
 		const bot = new Bot(c.env.BOT_TOKEN, { botInfo: c.env.BOT_INFO });
 
+		const db = drizzle(c.env.DB);
 		setupBotMiddleware(bot);
-		bot.command('start', handleStartCommand);
-		bot.command('add', handleAddCommand);
+		bot.command('start', (ctx) => handleStartCommand(ctx, db));
+		bot.command('add', (ctx) => handleAddCommand(ctx, db));
 
 		return webhookCallback(bot, 'hono')(c);
 	});
