@@ -49,5 +49,5 @@ export async function handleHelpCommand(ctx: CommandContext<Context>) {
 - Maximum of 5 tracked items per user
 `;
 
-	await ctx.reply(helpText, { parse_mode: 'Markdown' });
+	await ctx.reply(helpText, { parse_mode: 'Markdown', link_preview_options: { is_disabled: true } });
 }
