@@ -1,148 +1,11 @@
-import { Bot, CommandContext, Context, webhookCallback } from 'grammy';
+import { Bot, Context, webhookCallback } from 'grammy';
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq } from 'drizzle-orm';
-import { users, items, priceHistory } from './db/schema';
-import { scrapeTokopedia, isValidTokopediaUrl, ScrapingError } from './scrapers/tokopedia';
-
-class BotError extends Error {
-	constructor(message: string, public userFriendlyMessage: string) {
-		super(message);
-		this.name = 'BotError';
-	}
-}
+import { setupBotMiddleware } from './handlers/middleware';
+import { handleStartCommand, handleHelpCommand } from './handlers/user';
+import { handleAddCommand, handleMyItemsCommand } from './handlers/items';
 
 const app = new Hono<{ Bindings: Env }>();
-
-/**
- * Middleware to handle common bot setup
- */
-function setupBotMiddleware(bot: Bot) {
-	// Error handling middleware
-	bot.use(async (ctx, next) => {
-		try {
-			await next();
-		} catch (error) {
-			if (error instanceof BotError) {
-				await ctx.reply(error.userFriendlyMessage);
-			} else if (error instanceof Error) {
-				if ('url' in error && typeof error.url === 'string') {
-					console.error(`Scraping failed for ${error.url}:`, error.message);
-					await ctx.reply('❌ Failed to process product page. Please try again later.');
-				} else {
-					console.error('Unexpected error:', error);
-					await ctx.reply('❌ An unexpected error occurred. Please try again later.');
-				}
-			}
-		}
-	});
-}
-
-/**
- * Handles the /start command - user registration
- */
-async function handleStartCommand(ctx: CommandContext<Context>, db: ReturnType<typeof drizzle>) {
-	const userId = ctx.from?.id.toString();
-	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
-
-	const user = await db.select().from(users).where(eq(users.id, userId)).get();
-
-	if (user) {
-		await ctx.reply(`Welcome back, ${user.firstName}! What do you want to track today?`);
-	} else {
-		await db.insert(users).values({
-			id: userId,
-			username: ctx.from?.username ?? null,
-			firstName: ctx.from?.first_name ?? 'User',
-			lastName: ctx.from?.last_name,
-			createdAt: new Date(),
-		});
-		await ctx.reply('Welcome to ThriftMind! Use /help to see available commands.');
-	}
-}
-
-/**
- * Handles the /add command - adding new items to track
- */
-async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnType<typeof drizzle>) {
-	const userId = ctx.from?.id.toString();
-	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
-
-	const [url, targetPriceStr] = ctx.match.split(' ').filter(Boolean);
-	const targetPrice = targetPriceStr ? parseFloat(targetPriceStr) : undefined;
-
-	if (!url) {
-		throw new BotError('Missing URL', 'Please provide a product URL. Usage: /add <url> [target_price]');
-	}
-
-	if (!isValidTokopediaUrl(url)) {
-		throw new BotError('Invalid URL', '❌ Invalid Tokopedia URL. Please provide a valid Tokopedia product link.');
-	}
-
-	// Check if user exists
-	const user = await db.select().from(users).where(eq(users.id, userId)).get();
-	if (!user) {
-		throw new BotError('Unregistered user', 'Please use /start first to register your account.');
-	}
-
-	// Scrape product details
-	const product = await scrapeTokopedia(url);
-
-	// Insert new item
-	const itemId = `item_${Date.now()}`;
-	await db.insert(items).values({
-		id: itemId,
-		url,
-		title: product.title,
-		currentPrice: product.price,
-		targetPrice,
-		lastChecked: new Date(),
-		userId,
-	});
-
-	// Record initial price
-	await db.insert(priceHistory).values({
-		id: `ph_${Date.now()}`,
-		itemId,
-		price: product.price,
-		recordedAt: new Date(),
-	});
-
-	// Send success message
-	let reply = `✅ ${product.title} - Rp${product.price.toLocaleString('id-ID')}`;
-	if (targetPrice) {
-		reply += ` (Target: Rp${targetPrice.toLocaleString('id-ID')})`;
-	}
-
-	await ctx.reply(reply);
-}
-
-/**
- * Handles the /myitems command - lists all tracked items for user
- */
-async function handleMyItemsCommand(ctx: CommandContext<Context>, db: ReturnType<typeof drizzle>) {
-	const userId = ctx.from?.id.toString();
-	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
-
-	const userItems = await db.select().from(items).where(eq(items.userId, userId)).all();
-
-	if (userItems.length === 0) {
-		await ctx.reply("You don't have any tracked items yet. Use /add to start tracking!");
-		return;
-	}
-
-	let message = '📋 Your items:\n';
-	for (const item of userItems) {
-		message += `\n📌 ${item.title}`;
-		message += `\n💰 Rp${item.currentPrice.toLocaleString('id-ID')}`;
-		if (item.targetPrice) {
-			message += ` 🎯 Rp${item.targetPrice.toLocaleString('id-ID')}`;
-		}
-		message += `\n⏰ ${new Date(item.lastChecked).toLocaleTimeString()}`;
-	}
-
-	await ctx.reply(message);
-}
 
 app
 	.get('/', (c) => c.redirect('https://t.me/thriftmind_bot'))
@@ -161,10 +24,13 @@ app
 		const bot = new Bot(c.env.BOT_TOKEN, { botInfo: c.env.BOT_INFO });
 
 		const db = drizzle(c.env.DB);
+
 		setupBotMiddleware(bot);
+
 		bot.command('start', (ctx) => handleStartCommand(ctx, db));
 		bot.command('add', (ctx) => handleAddCommand(ctx, db));
 		bot.command('myitems', (ctx) => handleMyItemsCommand(ctx, db));
+		bot.command('help', (ctx) => handleHelpCommand(ctx));
 
 		return webhookCallback(bot, 'hono')(c);
 	});
