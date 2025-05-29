@@ -9,10 +9,13 @@
 		"cf-typegen": "wrangler types"
 	},
 	"devDependencies": {
+		"@types/node": "^22.15.24",
+		"drizzle-kit": "^0.31.1",
 		"typescript": "^5.5.2",
 		"wrangler": "^4.17.0"
 	},
 	"dependencies": {
+		"drizzle-orm": "^0.44.0",
 		"grammy": "^1.36.3",
 		"hono": "^4.7.10"
 	}
