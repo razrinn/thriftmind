@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/d1';
 import { setupBotMiddleware } from './handlers/middleware';
 import { handleStartCommand, handleHelpCommand } from './handlers/user';
 import { handleAddCommand, handleMyItemsCommand, handleDeleteCommand } from './handlers/items';
+import { scheduledHandler } from './handlers/scheduled';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -38,4 +39,5 @@ app
 
 export default {
 	fetch: app.fetch,
+	scheduled: scheduledHandler,
 } satisfies ExportedHandler<Env>;
