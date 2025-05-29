@@ -109,11 +109,9 @@ async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnType<typ
 	});
 
 	// Send success message
-	let reply =
-		`✅ Successfully added tracking for:\n\n` + `📌 ${product.title}\n` + `💰 Current Price: Rp ${product.price.toLocaleString('id-ID')}`;
-
+	let reply = `✅ ${product.title} - Rp${product.price.toLocaleString('id-ID')}`;
 	if (targetPrice) {
-		reply += `\n🎯 Target Price: Rp ${targetPrice.toLocaleString('id-ID')}`;
+		reply += ` (Target: Rp${targetPrice.toLocaleString('id-ID')})`;
 	}
 
 	await ctx.reply(reply);
@@ -133,14 +131,14 @@ async function handleMyItemsCommand(ctx: CommandContext<Context>, db: ReturnType
 		return;
 	}
 
-	let message = '📋 Your Tracked Items:\n\n';
+	let message = '📋 Your items:\n';
 	for (const item of userItems) {
-		message += `📌 ${item.title}\n`;
-		message += `💰 Current Price: Rp ${item.currentPrice.toLocaleString('id-ID')}\n`;
+		message += `\n📌 ${item.title}`;
+		message += `\n💰 Rp${item.currentPrice.toLocaleString('id-ID')}`;
 		if (item.targetPrice) {
-			message += `🎯 Target Price: Rp ${item.targetPrice.toLocaleString('id-ID')}\n`;
+			message += ` 🎯 Rp${item.targetPrice.toLocaleString('id-ID')}`;
 		}
-		message += `⏰ Last Checked: ${new Date(item.lastChecked).toLocaleString()}\n\n`;
+		message += `\n⏰ ${new Date(item.lastChecked).toLocaleTimeString()}`;
 	}
 
 	await ctx.reply(message);
