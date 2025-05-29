@@ -11,6 +11,9 @@ importers:
       grammy:
         specifier: ^1.36.3
         version: 1.36.3
+      hono:
+        specifier: ^4.7.10
+        version: 4.7.10
     devDependencies:
       typescript:
         specifier: ^5.5.2
@@ -430,6 +433,10 @@ packages:
     resolution: {integrity: sha512-OmoYn0WTETbMR7FbEy6QWx0Dvm3Md1O84UOgZLmj19mYlKbhefu2fSHDjoflxDNu8QgIrseQRsFSk4zRRcvJOA==}
     engines: {node: ^12.20.0 || >=14.13.1}
 
+  hono@4.7.10:
+    resolution: {integrity: sha512-QkACju9MiN59CKSY5JsGZCYmPZkA6sIW6OFCUp7qDjZu6S6KHtJHhAc9Uy9mV9F8PJ1/HQ3ybZF2yjCa/73fvQ==}
+    engines: {node: '>=16.9.0'}
+
   is-arrayish@0.3.2:
     resolution: {integrity: sha512-eVRqCvVlZbuw3GrM63ovNSNAeA1K16kaR/LRY/92w0zxQ5/1YzwblUX652i4Xs9RwAGjW9d9y6X88t8OaAJfWQ==}
 
@@ -848,6 +855,8 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  hono@4.7.10: {}
 
   is-arrayish@0.3.2: {}
 
