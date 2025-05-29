@@ -30,7 +30,7 @@ export const priceHistory = sqliteTable('price_history', {
 	id: text('id').primaryKey(),
 	itemId: text('item_id')
 		.notNull()
-		.references(() => items.id),
+		.references(() => items.id, { onDelete: 'cascade' }),
 	price: real('price').notNull(),
 	recordedAt: integer('recorded_at', { mode: 'timestamp_ms' }).notNull(),
 });
@@ -42,7 +42,7 @@ export const notifications = sqliteTable('notifications', {
 		.references(() => users.id),
 	itemId: text('item_id')
 		.notNull()
-		.references(() => items.id),
+		.references(() => items.id, { onDelete: 'cascade' }),
 	oldPrice: real('old_price').notNull(),
 	newPrice: real('new_price').notNull(),
 	sentAt: integer('sent_at', { mode: 'timestamp_ms' }).notNull(),

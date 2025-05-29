@@ -1,7 +1,7 @@
 import { CommandContext, Context } from 'grammy';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, count } from 'drizzle-orm';
-import { items, priceHistory, users } from '../db/schema';
+import { items, notifications, priceHistory, users } from '../db/schema';
 import { scrapeTokopedia, isValidTokopediaUrl } from '../scrapers/tokopedia';
 import { BotError } from './middleware';
 import { generateShortId } from '../utils/idGenerator';
@@ -128,7 +128,7 @@ export async function handleDeleteCommand(ctx: CommandContext<Context>, db: Retu
 		throw new BotError('Permission denied', '❌ You can only delete your own items');
 	}
 
-	// Delete the item
+	// Delete the item (related records will be deleted automatically via ON DELETE CASCADE)
 	await db.delete(items).where(eq(items.shortId, shortId));
 	await ctx.reply(`✅ Deleted: ${truncate(item.title)}`);
 }
