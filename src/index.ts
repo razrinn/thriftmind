@@ -1,9 +1,15 @@
+import { Bot, Context, webhookCallback } from "grammy";
+
+
 export default {
-	async fetch(req) {
-		const url = new URL(req.url);
-		url.pathname = '/__scheduled';
-		url.searchParams.append('cron', '* * * * *');
-		return new Response(`To test the scheduled handler, ensure you have used the "--test-scheduled" then try running "curl ${url.href}".`);
+	async fetch(req, env, ctx) {
+    const bot = new Bot(env.BOT_TOKEN, { botInfo: JSON.parse(env.BOT_INFO) });
+
+    bot.command("start", async (ctx: Context) => {
+      await ctx.reply("Hello, world!");
+    });
+
+    return webhookCallback(bot, "cloudflare-mod")(req);
 	},
 
 
