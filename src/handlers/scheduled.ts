@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, lt, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { items, priceHistory } from '../db/schema';
 import { generateId, truncate } from '../utils/idGenerator';
@@ -18,7 +18,7 @@ export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (con
 		const itemsToProcess = await db
 			.select()
 			.from(items)
-			.where(sql`${items.lastChecked} < ${startOfDay}`)
+			.where(lt(items.lastChecked, startOfDay))
 			.orderBy(asc(items.lastChecked))
 			.limit(BATCH_SIZE);
 
