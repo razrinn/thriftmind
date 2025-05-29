@@ -19,3 +19,10 @@ export function generateShortId(length = 6): string {
 export function generateId(): string {
 	return crypto.randomUUID();
 }
+
+/**
+ * Truncates text to max length with ellipsis if needed
+ */
+export function truncate(text: string, maxLength = 36) {
+	return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+}

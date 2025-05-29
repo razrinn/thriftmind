@@ -4,14 +4,7 @@ import { eq, count, desc } from 'drizzle-orm';
 import { items, priceHistory, users } from '../db/schema';
 import { scrapeTokopedia, isValidTokopediaUrl } from '../scrapers/tokopedia';
 import { BotError } from './middleware';
-import { generateId, generateShortId } from '../utils/idGenerator';
-
-/**
- * Truncates text to max length with ellipsis if needed
- */
-function truncate(text: string, maxLength = 36) {
-	return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-}
+import { generateId, generateShortId, truncate } from '../utils/idGenerator';
 
 /**
  * Handles the /add command - adding new items to track

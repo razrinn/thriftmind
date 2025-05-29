@@ -1,18 +1,25 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { items, priceHistory } from '../db/schema';
-import { generateId } from '../utils/idGenerator';
+import { generateId, truncate } from '../utils/idGenerator';
 import { scrapeTokopedia } from '../scrapers/tokopedia';
+import { Bot } from 'grammy';
 
 const BATCH_SIZE = 10;
-const DELAY_MS = 1000; // 1 second delay between requests
 
 export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (controller, env, ctx) => {
 	const db = drizzle(env.DB);
+	const bot = new Bot(env.BOT_TOKEN, { botInfo: env.BOT_INFO });
 
 	try {
-		// Get oldest unchecked items
-		const itemsToProcess = await db.select().from(items).orderBy(asc(items.lastChecked)).limit(BATCH_SIZE);
+		const now = new Date();
+		const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+		const itemsToProcess = await db
+			.select()
+			.from(items)
+			.where(sql`${items.lastChecked} < ${startOfDay}`)
+			.orderBy(asc(items.lastChecked))
+			.limit(BATCH_SIZE);
 
 		if (itemsToProcess.length === 0) {
 			return;
@@ -42,7 +49,21 @@ export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (con
 					recordedAt: now,
 				});
 
-				// TODO: add notification bot
+				// Check if price is lowest ever
+				const priceHistoryRecords = await db.select().from(priceHistory).where(eq(priceHistory.itemId, item.id));
+
+				const minPrice = priceHistoryRecords.reduce((min, record) => Math.min(min, record.price), scraped.price);
+
+				let message = '';
+				if (scraped.price <= minPrice) {
+					message = `📉 Lowest price! ${truncate(item.title)}: ${scraped.price}`;
+				} else if (item.targetPrice && scraped.price <= item.targetPrice) {
+					message = `✅ Price alert! ${truncate(item.title)}: ${scraped.price} (target: ${item.targetPrice})`;
+				}
+
+				if (message) {
+					await bot.api.sendMessage(item.userId, message);
+				}
 			} catch (error) {
 				console.error(`Failed to process item ${item.id}:`, error);
 				await db
@@ -52,11 +73,6 @@ export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (con
 						lastError: error instanceof Error ? error.message : String(error),
 					})
 					.where(eq(items.id, item.id));
-			}
-
-			// Add delay between requests
-			if (itemsToProcess.indexOf(item) < itemsToProcess.length - 1) {
-				await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
 			}
 		}
 	} catch (error) {
