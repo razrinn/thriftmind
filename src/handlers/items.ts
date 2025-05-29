@@ -108,27 +108,28 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 
 		message += `\n\n🆔 ${item.shortId}`;
 		message += `\n📌 ${truncate(item.title)}`;
-		message += `\n💰 Cur: Rp${item.currentPrice.toLocaleString('id-ID')} (${new Date(item.lastChecked).toLocaleString()})`;
 
-		message += `\n 🎯 Targ: ${item.targetPrice ? `Rp${item.targetPrice.toLocaleString('id-ID')}` : '-'}`;
+		message += `\n🎯 ${item.targetPrice ? `Rp${item.targetPrice.toLocaleString('id-ID')}` : '-'}\n`;
 
 		if (lowestPriceRecord) {
 			const priceDiff = item.currentPrice - lowestPriceRecord.price;
 			if (priceDiff >= 0) {
-				message += '\n⬇️ Low: -';
+				message += '\n⬇️ -';
 			} else {
-				message += `\n⬇️ Low: Rp${lowestPriceRecord.price.toLocaleString('id-ID')} (📉 Rp${Math.abs(priceDiff).toLocaleString(
+				message += `\n⬇️ Rp${lowestPriceRecord.price.toLocaleString('id-ID')} (📉 Rp${Math.abs(priceDiff).toLocaleString(
 					'id-ID'
 				)}) (${new Date(lowestPriceRecord.recordedAt).toLocaleString()})`;
 			}
 		}
 
+		message += `\n💰 Rp${item.currentPrice.toLocaleString('id-ID')} (${new Date(item.lastChecked).toLocaleString()})`;
+
 		if (highestPriceRecord) {
 			const priceDiff = item.currentPrice - highestPriceRecord.price;
 			if (priceDiff <= 0) {
-				message += '\n⬆️ High: -';
+				message += '\n⬆️ -';
 			} else {
-				message += `\n⬆️ High: Rp${highestPriceRecord.price.toLocaleString('id-ID')} (📈 +Rp${Math.abs(priceDiff).toLocaleString(
+				message += `\n⬆️ Rp${highestPriceRecord.price.toLocaleString('id-ID')} (📈 +Rp${Math.abs(priceDiff).toLocaleString(
 					'id-ID'
 				)}) (${new Date(highestPriceRecord.recordedAt).toLocaleString()})`;
 			}
