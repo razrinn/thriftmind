@@ -3,7 +3,7 @@ import { Bot, Context, webhookCallback } from "grammy";
 
 export default {
 	async fetch(req, env, ctx) {
-    const bot = new Bot(env.BOT_TOKEN, { botInfo: JSON.parse(env.BOT_INFO) });
+    const bot = new Bot(env.BOT_TOKEN, { botInfo: env.BOT_INFO});
 
 
     bot.command("start", async (ctx: Context) => {
