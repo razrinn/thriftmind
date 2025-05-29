@@ -4,9 +4,10 @@
 	"private": true,
 	"scripts": {
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev --test-scheduled",
-		"start": "wrangler dev --test-scheduled",
-		"cf-typegen": "wrangler types"
+		"dev": "wrangler dev --test-scheduled --remote",
+		"start": "wrangler dev --test-scheduled --remote",
+		"cf-typegen": "wrangler types",
+		"db:push": "drizzle-kit push"
 	},
 	"devDependencies": {
 		"@types/node": "^22.15.24",

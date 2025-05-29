@@ -3,7 +3,7 @@ import { defineConfig } from 'drizzle-kit';
 // Only run from local/pipeline
 export default defineConfig({
 	out: './src/db/migrations',
-	schema: './src/db/**.schema.ts',
+	schema: './src/db/schema.ts',
 	dialect: 'sqlite',
 	driver: 'd1-http',
 	dbCredentials: {
