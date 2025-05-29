@@ -1,4 +1,4 @@
-import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const users = sqliteTable('users', {
 	id: text('id').primaryKey(), // Telegram user ID
@@ -19,13 +19,13 @@ export const items = sqliteTable(
 		currentPrice: real('current_price').notNull(),
 		targetPrice: real('target_price'),
 		lastChecked: integer('last_checked', { mode: 'timestamp_ms' }).notNull(),
-		errorCount: integer('error_count').notNull().default(0),
+		errorCount: integer('error_count').default(0),
 		lastError: text('last_error'),
 		userId: text('user_id')
 			.notNull()
 			.references(() => users.id),
 	},
-	(table) => [uniqueIndex('url_idx').on(table.url), uniqueIndex('last_checked_idx').on(table.lastChecked)]
+	(table) => [index('items_user_id_idx').on(table.userId)]
 );
 
 export const priceHistory = sqliteTable('price_history', {

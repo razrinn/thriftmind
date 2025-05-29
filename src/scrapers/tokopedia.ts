@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import { randomizeUserAgent } from '../utils/userAgent';
 
 /**
  * Custom errors for scraping failures
@@ -19,7 +20,7 @@ interface ScrapedProduct {
 }
 
 const TOKOPEDIA_URL_REGEX = /^https?:\/\/(?:www\.)?tokopedia\.com\/[^/]+\/[^/]+/i;
-const REQUEST_TIMEOUT_MS = 10000;
+const REQUEST_TIMEOUT_MS = 10000; // Increased from 10s to 30s
 
 /**
  * Validates a Tokopedia product URL format
@@ -42,17 +43,15 @@ export async function scrapeTokopedia(url: string): Promise<ScrapedProduct> {
 	}
 
 	try {
-		// Add timeout and retry logic
-		const controller = new AbortController();
-		const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
 		const response = await fetch(url, {
-			signal: controller.signal,
 			headers: {
-				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+				'User-Agent': randomizeUserAgent(),
 			},
 		});
-		clearTimeout(timeout);
+
+		if (response.status === 429) {
+			throw new ScrapingError('Rate limited by Tokopedia', url);
+		}
 
 		if (!response.ok) {
 			throw new ScrapingError(`HTTP ${response.status}: ${response.statusText}`, url);

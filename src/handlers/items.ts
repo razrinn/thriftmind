@@ -4,7 +4,7 @@ import { eq, count, desc } from 'drizzle-orm';
 import { items, priceHistory, users } from '../db/schema';
 import { scrapeTokopedia, isValidTokopediaUrl } from '../scrapers/tokopedia';
 import { BotError } from './middleware';
-import { generateShortId } from '../utils/idGenerator';
+import { generateId, generateShortId } from '../utils/idGenerator';
 
 /**
  * Truncates text to max length with ellipsis if needed
@@ -47,7 +47,7 @@ export async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnT
 	const product = await scrapeTokopedia(url);
 
 	// Insert new item
-	const itemId = `item_${Date.now()}`;
+	const itemId = generateId();
 	const shortId = generateShortId();
 	await db.insert(items).values({
 		id: itemId,
@@ -61,8 +61,10 @@ export async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnT
 	});
 
 	// Record initial price
+	const historyId = generateId();
+
 	await db.insert(priceHistory).values({
-		id: `ph_${Date.now()}`,
+		id: historyId,
 		itemId,
 		price: product.price,
 		recordedAt: new Date(),

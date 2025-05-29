@@ -5,6 +5,7 @@ import { generateId } from '../utils/idGenerator';
 import { scrapeTokopedia } from '../scrapers/tokopedia';
 
 const BATCH_SIZE = 10;
+const DELAY_MS = 1000; // 1 second delay between requests
 
 export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (controller, env, ctx) => {
 	const db = drizzle(env.DB);
@@ -14,11 +15,10 @@ export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (con
 		const itemsToProcess = await db.select().from(items).orderBy(asc(items.lastChecked)).limit(BATCH_SIZE);
 
 		if (itemsToProcess.length === 0) {
-			console.log('No items to process');
 			return;
 		}
 
-		// Process each item
+		// Process items sequentially with delay
 		for (const item of itemsToProcess) {
 			try {
 				const scraped = await scrapeTokopedia(item.url);
@@ -42,11 +42,9 @@ export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (con
 					recordedAt: now,
 				});
 
-				console.log(`Processed item ${item.id}, new price: ${scraped.price}`);
 				// TODO: add notification bot
 			} catch (error) {
 				console.error(`Failed to process item ${item.id}:`, error);
-				// Track error count
 				await db
 					.update(items)
 					.set({
@@ -54,6 +52,11 @@ export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (con
 						lastError: error instanceof Error ? error.message : String(error),
 					})
 					.where(eq(items.id, item.id));
+			}
+
+			// Add delay between requests
+			if (itemsToProcess.indexOf(item) < itemsToProcess.length - 1) {
+				await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
 			}
 		}
 	} catch (error) {
