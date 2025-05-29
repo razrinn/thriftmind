@@ -153,3 +153,36 @@ export async function handleDeleteCommand(ctx: CommandContext<Context>, db: Retu
 	await db.delete(items).where(eq(items.shortId, shortId));
 	await ctx.reply(`✅ Deleted: ${truncate(item.title)}`);
 }
+
+/**
+ * Handles the /edit command - updates target price for an item
+ */
+export async function handleEditCommand(ctx: CommandContext<Context>, db: ReturnType<typeof drizzle>) {
+	const userId = ctx.from?.id.toString();
+	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
+
+	const [shortId, newTargetStr] = ctx.match.split(' ').filter(Boolean);
+	const newTargetPrice = newTargetStr ? parseFloat(newTargetStr) : null;
+
+	if (!shortId) {
+		throw new BotError('Missing ID', 'Please provide item ID. Usage: /edit <item-id> <new-target-price>');
+	}
+
+	// Validate item exists and belongs to user
+	const item = await db.select().from(items).where(eq(items.shortId, shortId)).get();
+	if (!item) throw new BotError('Not found', '❌ Item not found');
+	if (item.userId !== userId) throw new BotError('Permission denied', '❌ You can only edit your own items');
+
+	// Update target price
+	await db.update(items).set({ targetPrice: newTargetPrice }).where(eq(items.shortId, shortId));
+
+	// Format response
+	let response = `✅ Updated ${shortId} - ${truncate(item.title)}`;
+	if (newTargetPrice) {
+		response += `\nNew target: ${formatIDR(newTargetPrice)}`;
+	} else {
+		response += `\nTarget price removed`;
+	}
+
+	await ctx.reply(response);
+}

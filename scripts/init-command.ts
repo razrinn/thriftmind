@@ -35,4 +35,8 @@ await bot.api.setMyCommands([
 		command: 'myitems',
 		description: 'List all tracked items with current prices and last checked time',
 	},
+	{
+		command: 'edit',
+		description: 'Update target price for an item - usage: /edit [id] [new_target_price]',
+	},
 ]);

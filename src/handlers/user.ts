@@ -37,7 +37,9 @@ export async function handleHelpCommand(ctx: CommandContext<Context>) {
 *Available Commands:*
 /start - Register your account
 /add <url> [target_price] - Track a new product
+/edit <item-id> <new_target_price> - Update target price
 /myitems - List your tracked items
+/delete <item-id> - Remove a tracked item
 /help - Show this help message
 
 *Supported URLs:*
