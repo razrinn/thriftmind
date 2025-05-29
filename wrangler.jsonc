@@ -10,11 +10,11 @@
 	"observability": {
 		"enabled": true
 	},
-	// "triggers": {
-	// 	"crons": [
-	// 		"* * * * *"
-	// 	]
-	// }
+	"triggers": {
+		"crons": [
+			// "* * * * *"
+		]
+	},
 	"vars": {
 		"BOT_INFO": "{\"id\":8158796886,\"is_bot\":true,\"first_name\":\"ThriftMind\",\"username\":\"thriftmind_bot\",\"can_join_groups\":true,\"can_read_all_group_messages\":false,\"supports_inline_queries\":false,\"can_connect_to_business\":false,\"has_main_web_app\":false}"
 	}
