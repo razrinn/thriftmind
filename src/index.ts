@@ -1,4 +1,4 @@
-import { Bot, webhookCallback } from 'grammy';
+import { Bot, CommandContext, Context, webhookCallback } from 'grammy';
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
@@ -56,7 +56,7 @@ function setupBotMiddleware(bot: Bot) {
 /**
  * Handles the /start command - user registration
  */
-async function handleStartCommand(ctx: any) {
+async function handleStartCommand(ctx: CommandContext<Context>) {
 	const userId = ctx.from?.id.toString();
 	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
 
@@ -79,7 +79,7 @@ async function handleStartCommand(ctx: any) {
 /**
  * Handles the /add command - adding new items to track
  */
-async function handleAddCommand(ctx: any) {
+async function handleAddCommand(ctx: CommandContext<Context>) {
 	const userId = ctx.from?.id.toString();
 	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
 
