@@ -16,6 +16,8 @@
 		"wrangler": "^4.17.0"
 	},
 	"dependencies": {
+		"@types/cheerio": "^1.0.0",
+		"cheerio": "^1.0.0",
 		"drizzle-orm": "^0.44.0",
 		"grammy": "^1.36.3",
 		"hono": "^4.7.10"
