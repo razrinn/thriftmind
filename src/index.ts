@@ -1,4 +1,4 @@
-import { Bot, Context, webhookCallback } from "grammy";
+import { Bot, webhookCallback } from "grammy";
 
 
 export default {
@@ -6,8 +6,8 @@ export default {
     const bot = new Bot(env.BOT_TOKEN, { botInfo: env.BOT_INFO});
 
 
-    bot.command("start", async (ctx: Context) => {
-      await ctx.reply("Hello, world!");
+    bot.command("start", async (c) => {
+      await c.reply("Hello, world!");
     });
 
     return webhookCallback(bot, "cloudflare-mod")(req);
