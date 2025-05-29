@@ -1,6 +1,6 @@
 import { CommandContext, Context } from 'grammy';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { items, priceHistory, users } from '../db/schema';
 import { scrapeTokopedia, isValidTokopediaUrl } from '../scrapers/tokopedia';
 import { BotError } from './middleware';
@@ -37,6 +37,12 @@ export async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnT
 		throw new BotError('Unregistered user', 'Please use /start first to register your account.');
 	}
 
+	// Check item limit
+	const itemCount = (await db.select({ count: count() }).from(items).where(eq(items.userId, userId)))[0].count;
+	if (itemCount >= user.maxItems) {
+		throw new BotError('Limit exceeded', `❌ You've reached your item limit (${user.maxItems}). Delete some items before adding more.`);
+	}
+
 	// Scrape product details
 	const product = await scrapeTokopedia(url);
 
@@ -63,9 +69,9 @@ export async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnT
 	});
 
 	// Send success message
-	let reply = `✅ ${truncate(product.title)} - Rp${product.price.toLocaleString('id-ID')}`;
+	let reply = `✅ ${shortId} - ${truncate(product.title)} - Rp${product.price.toLocaleString('id-ID')}`;
 	if (targetPrice) {
-		reply += ` (Target: Rp${targetPrice.toLocaleString('id-ID')})`;
+		reply += `\n(Target: Rp${targetPrice.toLocaleString('id-ID')})`;
 	}
 
 	await ctx.reply(reply);
@@ -87,7 +93,8 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 
 	let message = '📋 Your items:';
 	for (const item of userItems) {
-		message += `\n\n🆔 ${item.shortId} - 📌 ${truncate(item.title)}`;
+		message += `\n\n🆔 ${item.shortId}`;
+		message += `\n📌 ${truncate(item.title)}`;
 		message += `\n💰 Rp${item.currentPrice.toLocaleString('id-ID')}`;
 		if (item.targetPrice) {
 			message += ` 🎯 Rp${item.targetPrice.toLocaleString('id-ID')}`;

@@ -6,6 +6,7 @@ export const users = sqliteTable('users', {
 	firstName: text('first_name').notNull(),
 	lastName: text('last_name'),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+	maxItems: integer('max_items').notNull().default(5),
 });
 
 export const items = sqliteTable(
