@@ -1,7 +1,7 @@
 import { CommandContext, Context } from 'grammy';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, count, desc } from 'drizzle-orm';
-import { items, notifications, priceHistory, users } from '../db/schema';
+import { items, priceHistory, users } from '../db/schema';
 import { scrapeTokopedia, isValidTokopediaUrl } from '../scrapers/tokopedia';
 import { BotError } from './middleware';
 import { generateShortId } from '../utils/idGenerator';
@@ -95,7 +95,7 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 	const user = await db.select().from(users).where(eq(users.id, userId)).get();
 	const maxItems = user?.maxItems || 5; // Default to 5 if not set
 
-	let message = `📋 Your items (${userItems.length}/${maxItems}):`;
+	let message = `📋 Items (${userItems.length}/${maxItems}):`;
 	for (const item of userItems) {
 		// Get lowest and highest prices from history in a single batch
 		const [lowestQuery, highestQuery] = await db.batch([
@@ -106,34 +106,29 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 		const lowestPriceRecord = lowestQuery[0];
 		const highestPriceRecord = highestQuery[0];
 
-		message += `\n\n🆔 ${item.shortId}`;
-		message += `\n📌 ${truncate(item.title)}`;
-
-		message += `\n🎯 ${item.targetPrice ? `Rp${item.targetPrice.toLocaleString('id-ID')}` : '-'}\n`;
+		message += `\n\n🆔 ${item.shortId} - ${truncate(item.title)}`;
+		message += `\n🎯 Target: ${item.targetPrice ? `Rp${item.targetPrice.toLocaleString('id-ID')}` : 'None'}`;
+		message += ` | 💰 Current: Rp${item.currentPrice.toLocaleString('id-ID')}`;
 
 		if (lowestPriceRecord) {
 			const priceDiff = item.currentPrice - lowestPriceRecord.price;
-			if (priceDiff >= 0) {
-				message += '\n⬇️ -';
-			} else {
-				message += `\n⬇️ Rp${lowestPriceRecord.price.toLocaleString('id-ID')} (📉 Rp${Math.abs(priceDiff).toLocaleString(
-					'id-ID'
-				)}) (${new Date(lowestPriceRecord.recordedAt).toLocaleString()})`;
+			if (priceDiff < 0) {
+				message += ` | 📉 Low: Rp${lowestPriceRecord.price.toLocaleString('id-ID')} (${new Date(
+					lowestPriceRecord.recordedAt
+				).toLocaleDateString()})`;
 			}
 		}
-
-		message += `\n💰 Rp${item.currentPrice.toLocaleString('id-ID')} (${new Date(item.lastChecked).toLocaleString()})`;
 
 		if (highestPriceRecord) {
 			const priceDiff = item.currentPrice - highestPriceRecord.price;
-			if (priceDiff <= 0) {
-				message += '\n⬆️ -';
-			} else {
-				message += `\n⬆️ Rp${highestPriceRecord.price.toLocaleString('id-ID')} (📈 +Rp${Math.abs(priceDiff).toLocaleString(
-					'id-ID'
-				)}) (${new Date(highestPriceRecord.recordedAt).toLocaleString()})`;
+			if (priceDiff > 0) {
+				message += ` | 📈 High: Rp${highestPriceRecord.price.toLocaleString('id-ID')} (${new Date(
+					highestPriceRecord.recordedAt
+				).toLocaleDateString()})`;
 			}
 		}
+
+		message += `\n🔄 Last checked: ${new Date(item.lastChecked).toLocaleDateString()}`;
 	}
 
 	await ctx.reply(message);
