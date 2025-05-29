@@ -6,6 +6,13 @@ import { scrapeTokopedia, isValidTokopediaUrl } from '../scrapers/tokopedia';
 import { BotError } from './middleware';
 
 /**
+ * Truncates text to max length with ellipsis if needed
+ */
+function truncate(text: string, maxLength = 50) {
+	return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+}
+
+/**
  * Handles the /add command - adding new items to track
  */
 export async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnType<typeof drizzle>) {
@@ -53,7 +60,7 @@ export async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnT
 	});
 
 	// Send success message
-	let reply = `✅ ${product.title} - Rp${product.price.toLocaleString('id-ID')}`;
+	let reply = `✅ ${truncate(product.title)} - Rp${product.price.toLocaleString('id-ID')}`;
 	if (targetPrice) {
 		reply += ` (Target: Rp${targetPrice.toLocaleString('id-ID')})`;
 	}
@@ -75,9 +82,9 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 		return;
 	}
 
-	let message = '📋 Your items:\n';
+	let message = '📋 Your items:';
 	for (const item of userItems) {
-		message += `\n📌 ${item.title}`;
+		message += `\n\n📌 ${truncate(item.title)}`;
 		message += `\n💰 Rp${item.currentPrice.toLocaleString('id-ID')}`;
 		if (item.targetPrice) {
 			message += ` 🎯 Rp${item.targetPrice.toLocaleString('id-ID')}`;
