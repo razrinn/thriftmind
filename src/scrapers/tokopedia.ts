@@ -20,7 +20,35 @@ interface ScrapedProduct {
 }
 
 const TOKOPEDIA_URL_REGEX = /^https?:\/\/(?:www\.)?tokopedia\.com\/[^/]+\/[^/]+/i;
+const TOKOPEDIA_SHORT_URL_REGEX = /^https?:\/\/tk\.tokopedia\.com\/[^/]+/i;
 const REQUEST_TIMEOUT_MS = 10000; // Increased from 10s to 30s
+
+/**
+ * Resolves a Tokopedia short URL to the full product URL
+ * @param shortUrl The short URL to resolve
+ * @returns Promise resolving to full product URL
+ * @throws ScrapingError if URL cannot be resolved
+ */
+async function resolveShortUrl(shortUrl: string): Promise<string> {
+	const response = await fetch(shortUrl, {
+		headers: { 'User-Agent': randomizeUserAgent() },
+		redirect: 'manual',
+	});
+
+	if (!response.ok) {
+		throw new ScrapingError(`Failed to resolve short URL: HTTP ${response.status}`, shortUrl);
+	}
+
+	const html = await response.text();
+	const $ = cheerio.load(html);
+	const fullUrl = $('a').attr('href');
+
+	if (!fullUrl || !isValidTokopediaUrl(fullUrl)) {
+		throw new ScrapingError('No valid product URL found in short URL response', shortUrl);
+	}
+
+	return fullUrl;
+}
 
 /**
  * Validates a Tokopedia product URL format
@@ -38,6 +66,11 @@ export function isValidTokopediaUrl(url: string): boolean {
  * @throws ScrapingError for various failure scenarios
  */
 export async function scrapeTokopedia(url: string): Promise<ScrapedProduct> {
+	// Resolve short URLs first
+	if (TOKOPEDIA_SHORT_URL_REGEX.test(url)) {
+		url = await resolveShortUrl(url);
+	}
+
 	if (!isValidTokopediaUrl(url)) {
 		throw new ScrapingError('Invalid Tokopedia URL format', url);
 	}
