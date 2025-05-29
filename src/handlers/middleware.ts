@@ -1,4 +1,6 @@
 import { Bot } from 'grammy';
+import { Context } from 'hono';
+import { WHITELISTED_USERNAME } from '../utils/whitelist';
 
 export class BotError extends Error {
 	constructor(message: string, public userFriendlyMessage: string) {
@@ -14,6 +16,14 @@ export function setupBotMiddleware(bot: Bot) {
 	// Error handling middleware
 	bot.use(async (ctx, next) => {
 		try {
+			if (!ctx.from?.username) {
+				throw new BotError('Missing username', '❌ Set your Telegram username.');
+			}
+
+			if (!WHITELISTED_USERNAME.includes(ctx.from.username)) {
+				throw new BotError('Unauthorized access attempt', '⛔ Sorry, you are not authorized to use this bot');
+			}
+
 			await next();
 		} catch (error) {
 			if (error instanceof BotError) {
