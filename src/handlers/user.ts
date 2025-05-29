@@ -43,12 +43,15 @@ export async function handleHelpCommand(ctx: CommandContext<Context>) {
 /help - Show this help message
 
 *Supported URLs:*
-- Tokopedia (https://www.tokopedia.com/...)
+- Tokopedia
+	- https://www.tokopedia.com/...
+	- https://tk.tokopedia.com/...
 - Others coming soon
 
 *Current Limitations:*
 - Price checks are performed periodically
 - Maximum of 5 tracked items per user
+- Doesn't include mobile-only discounts
 `;
 
 	await ctx.reply(helpText, { parse_mode: 'Markdown', link_preview_options: { is_disabled: true } });
