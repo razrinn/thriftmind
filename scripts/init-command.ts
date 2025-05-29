@@ -20,15 +20,15 @@ await bot.api.setMyCommands([
 		description: 'Start using the bot - sends welcome message and instructions',
 	},
 	{
-		command: 'add',
-		description: 'Add a new item - usage: /add [item_name] [optional:target_price]',
-	},
-	{
 		command: 'help',
 		description: 'Show help information - lists all available commands',
 	},
 	{
-		command: 'list',
-		description: 'List all items - shows your saved items with details',
+		command: 'add',
+		description: 'Add a new item - usage: /add [item_name] [optional:target_price]',
+	},
+	{
+		command: 'myitems',
+		description: 'List all tracked items with current prices and last checked time',
 	},
 ]);

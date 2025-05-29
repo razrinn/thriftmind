@@ -119,6 +119,33 @@ async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnType<typ
 	await ctx.reply(reply);
 }
 
+/**
+ * Handles the /myitems command - lists all tracked items for user
+ */
+async function handleMyItemsCommand(ctx: CommandContext<Context>, db: ReturnType<typeof drizzle>) {
+	const userId = ctx.from?.id.toString();
+	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
+
+	const userItems = await db.select().from(items).where(eq(items.userId, userId)).all();
+
+	if (userItems.length === 0) {
+		await ctx.reply("You don't have any tracked items yet. Use /add to start tracking!");
+		return;
+	}
+
+	let message = '📋 Your Tracked Items:\n\n';
+	for (const item of userItems) {
+		message += `📌 ${item.title}\n`;
+		message += `💰 Current Price: Rp ${item.currentPrice.toLocaleString('id-ID')}\n`;
+		if (item.targetPrice) {
+			message += `🎯 Target Price: Rp ${item.targetPrice.toLocaleString('id-ID')}\n`;
+		}
+		message += `⏰ Last Checked: ${new Date(item.lastChecked).toLocaleString()}\n\n`;
+	}
+
+	await ctx.reply(message);
+}
+
 app
 	.get('/', (c) => c.redirect('https://t.me/thriftmind_bot'))
 	.use('/webhook', async (c, next) => {
@@ -139,6 +166,7 @@ app
 		setupBotMiddleware(bot);
 		bot.command('start', (ctx) => handleStartCommand(ctx, db));
 		bot.command('add', (ctx) => handleAddCommand(ctx, db));
+		bot.command('myitems', (ctx) => handleMyItemsCommand(ctx, db));
 
 		return webhookCallback(bot, 'hono')(c);
 	});
