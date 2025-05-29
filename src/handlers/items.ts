@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { items, priceHistory, users } from '../db/schema';
 import { scrapeTokopedia, isValidTokopediaUrl } from '../scrapers/tokopedia';
 import { BotError } from './middleware';
+import { generateShortId } from '../utils/idGenerator';
 
 /**
  * Truncates text to max length with ellipsis if needed
@@ -41,8 +42,10 @@ export async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnT
 
 	// Insert new item
 	const itemId = `item_${Date.now()}`;
+	const shortId = generateShortId();
 	await db.insert(items).values({
 		id: itemId,
+		shortId,
 		url,
 		title: product.title,
 		currentPrice: product.price,
@@ -84,7 +87,7 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 
 	let message = '📋 Your items:';
 	for (const item of userItems) {
-		message += `\n\n📌 ${truncate(item.title)}`;
+		message += `\n\n🆔 ${item.shortId} - 📌 ${truncate(item.title)}`;
 		message += `\n💰 Rp${item.currentPrice.toLocaleString('id-ID')}`;
 		if (item.targetPrice) {
 			message += ` 🎯 Rp${item.targetPrice.toLocaleString('id-ID')}`;
@@ -93,4 +96,26 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 	}
 
 	await ctx.reply(message);
+}
+
+/**
+ * Handles the /delete command - removes tracked items by short ID
+ */
+export async function handleDeleteCommand(ctx: CommandContext<Context>, db: ReturnType<typeof drizzle>) {
+	const userId = ctx.from?.id.toString();
+	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
+
+	const shortId = ctx.match.trim().toUpperCase(); // Case-insensitive matching
+	if (!shortId) {
+		throw new BotError('Missing ID', 'Please provide item ID. Usage: /delete <item-id>');
+	}
+
+	// Find and delete item
+	const deleted = await db.delete(items).where(eq(items.shortId, shortId)).returning().get();
+
+	if (!deleted || deleted.userId !== userId) {
+		throw new BotError('Not found', "❌ Item not found or you don't have permission");
+	}
+
+	await ctx.reply(`✅ Deleted: ${truncate(deleted.title)}`);
 }

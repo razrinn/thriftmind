@@ -25,7 +25,11 @@ await bot.api.setMyCommands([
 	},
 	{
 		command: 'add',
-		description: 'Add a new item - usage: /add [item_name] [optional:target_price]',
+		description: 'Add a new url - usage: /add [url] [optional:target_price]',
+	},
+	{
+		command: 'delete',
+		description: 'Delete a tracked url - usage: /delete [id]',
 	},
 	{
 		command: 'myitems',

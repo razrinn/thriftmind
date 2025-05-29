@@ -12,6 +12,7 @@ export const items = sqliteTable(
 	'items',
 	{
 		id: text('id').primaryKey(),
+		shortId: text('short_id').notNull().unique(),
 		url: text('url').notNull(),
 		title: text('title').notNull(),
 		currentPrice: real('current_price').notNull(),
