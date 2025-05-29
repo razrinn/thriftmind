@@ -2,7 +2,7 @@ import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlit
 
 export const users = sqliteTable('users', {
 	id: text('id').primaryKey(), // Telegram user ID
-	username: text('username').notNull(),
+	username: text('username'),
 	firstName: text('first_name').notNull(),
 	lastName: text('last_name'),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
