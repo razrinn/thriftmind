@@ -1,6 +1,7 @@
 import { CommandContext, Context } from 'grammy';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, count, desc } from 'drizzle-orm';
+import { formatIDR } from '../utils/priceFormatter';
 import { items, priceHistory, users } from '../db/schema';
 import { scrapeTokopedia, isValidTokopediaUrl } from '../scrapers/tokopedia';
 import { BotError } from './middleware';
@@ -64,7 +65,7 @@ export async function handleAddCommand(ctx: CommandContext<Context>, db: ReturnT
 	});
 
 	// Send success message
-	let reply = `✅ ${shortId} - ${truncate(product.title)} - Rp${product.price.toLocaleString('id-ID')}`;
+	let reply = `✅ ${shortId} - ${truncate(product.title)} - ${formatIDR(product.price)}`;
 	if (targetPrice) {
 		reply += `\n(Target: Rp${targetPrice.toLocaleString('id-ID')})`;
 	}
@@ -102,24 +103,20 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 		const highestPriceRecord = highestQuery[0];
 
 		message += `\n\n🆔 ${item.shortId} - ${truncate(item.title)}`;
-		message += `\n🎯 Target: ${item.targetPrice ? `Rp${item.targetPrice.toLocaleString('id-ID')}` : 'None'}`;
-		message += ` | 💰 Current: Rp${item.currentPrice.toLocaleString('id-ID')}`;
+		message += `\n🎯 Target: ${item.targetPrice ? formatIDR(item.targetPrice) : 'None'}`;
+		message += ` | 💰 Current: ${formatIDR(item.currentPrice)}`;
 
 		if (lowestPriceRecord) {
 			const priceDiff = item.currentPrice - lowestPriceRecord.price;
 			if (priceDiff < 0) {
-				message += ` | 📉 Low: Rp${lowestPriceRecord.price.toLocaleString('id-ID')} (${new Date(
-					lowestPriceRecord.recordedAt
-				).toLocaleDateString()})`;
+				message += ` | 📉 Low: ${formatIDR(lowestPriceRecord.price)} (${new Date(lowestPriceRecord.recordedAt).toLocaleDateString()})`;
 			}
 		}
 
 		if (highestPriceRecord) {
 			const priceDiff = item.currentPrice - highestPriceRecord.price;
 			if (priceDiff > 0) {
-				message += ` | 📈 High: Rp${highestPriceRecord.price.toLocaleString('id-ID')} (${new Date(
-					highestPriceRecord.recordedAt
-				).toLocaleDateString()})`;
+				message += ` | 📈 High: ${formatIDR(highestPriceRecord.price)} (${new Date(highestPriceRecord.recordedAt).toLocaleDateString()})`;
 			}
 		}
 

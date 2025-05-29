@@ -1,1 +1,1 @@
-export const WHITELISTED_USERNAME = ['razrinn'];
+export const WHITELISTED_USERNAME = ['razrinn', 'khalismurfid'];

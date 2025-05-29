@@ -2,6 +2,7 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { items, priceHistory } from '../db/schema';
 import { generateId, truncate } from '../utils/idGenerator';
+import { formatIDR } from '../utils/priceFormatter';
 import { scrapeTokopedia } from '../scrapers/tokopedia';
 import { Bot } from 'grammy';
 
@@ -56,9 +57,9 @@ export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (con
 
 				let message = '';
 				if (scraped.price <= minPrice) {
-					message = `📉 Lowest price! ${truncate(item.title)}: ${scraped.price}`;
+					message = `📉 Lowest price! ${truncate(item.title)}: ${formatIDR(scraped.price)}`;
 				} else if (item.targetPrice && scraped.price <= item.targetPrice) {
-					message = `✅ Price alert! ${truncate(item.title)}: ${scraped.price} (target: ${item.targetPrice})`;
+					message = `✅ Price alert! ${truncate(item.title)}: ${formatIDR(scraped.price)} (target: ${formatIDR(item.targetPrice)})`;
 				}
 
 				if (message) {
