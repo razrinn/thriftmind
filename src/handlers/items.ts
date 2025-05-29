@@ -91,7 +91,11 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 		return;
 	}
 
-	let message = '📋 Your items:';
+	// Get user's max item limit
+	const user = await db.select().from(users).where(eq(users.id, userId)).get();
+	const maxItems = user?.maxItems || 5; // Default to 5 if not set
+
+	let message = `📋 Your items (${userItems.length}/${maxItems}):`;
 	for (const item of userItems) {
 		message += `\n\n🆔 ${item.shortId}`;
 		message += `\n📌 ${truncate(item.title)}`;
