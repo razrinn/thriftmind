@@ -56,7 +56,7 @@ export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (con
 				const minPrice = priceHistoryRecords.reduce((min, record) => Math.min(min, record.price), scraped.price);
 
 				let message = '';
-				if (scraped.price <= minPrice) {
+				if (scraped.price < minPrice) {
 					message = `📉 Lowest price! ${truncate(item.title)}: ${formatIDR(scraped.price)}`;
 				} else if (item.targetPrice && scraped.price <= item.targetPrice) {
 					message = `✅ Price alert! ${truncate(item.title)}: ${formatIDR(scraped.price)} (target: ${formatIDR(item.targetPrice)})`;
