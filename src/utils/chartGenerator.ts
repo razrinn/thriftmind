@@ -1,5 +1,6 @@
 import { priceHistory } from '../db/schema';
-import { Resvg } from '@resvg/resvg-js';
+import { Resvg, initWasm } from '@resvg/resvg-wasm';
+import resvgWasm from '@resvg/resvg-wasm/index_bg.wasm';
 
 // Initialize WASM module once
 type PriceHistory = typeof priceHistory.$inferSelect;
@@ -13,6 +14,8 @@ type PriceHistory = typeof priceHistory.$inferSelect;
  * @returns SVG string
  */
 export async function generatePriceChart(history: PriceHistory[], width = 400, height = 200): Promise<Uint8Array> {
+	await initWasm(resvgWasm);
+
 	if (history.length < 2) {
 		const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
       <rect width="100%" height="100%" fill="#f8fafc"/>

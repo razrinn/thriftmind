@@ -33,6 +33,7 @@
 		"skipLibCheck": true,
 		"types": [
 			"./worker-configuration.d.ts",
+			"./src/types.d.ts",
 			"node"
 		]
 	}
