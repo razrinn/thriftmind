@@ -20,7 +20,7 @@ export async function generatePriceChart(history: PriceHistory[], width = 400, h
 	if (history.length < 2) {
 		const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
       <rect width="100%" height="100%" fill="#f8fafc"/>
-      <text x="50%" y="50%" text-anchor="middle" fill="#64748b">Not enough data</text>
+      <text x="50%" y="50%" text-anchor="middle" fill="#1e293b" font-family="Arial, sans-serif" font-size="14">Not enough data</text>
     </svg>`;
 
 		const resvg = new Resvg(svg);
@@ -71,16 +71,22 @@ export async function generatePriceChart(history: PriceHistory[], width = 400, h
 					const y = padding.top + ((maxPrice - tick) / priceRange) * (height - padding.top - padding.bottom);
 					return `
 	     <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="#e2e8f0" stroke-dasharray="2"/>
-	     <text x="${padding.left - 5}" y="${y + 3}" text-anchor="end" fill="#64748b" font-size="10">${formatIDR(tick)}</text>
+	     <text x="${padding.left - 5}" y="${y + 3}" text-anchor="end" fill="#1e293b" font-family="Arial, sans-serif" font-size="10">${formatIDR(
+						tick
+					)}</text>
 	   `;
 				})
 				.join('')}
 
 	   <!-- X-axis labels -->
-	   <text x="${padding.left}" y="${height - padding.bottom + 20}" text-anchor="middle" fill="#64748b" font-size="10">${
+	   <text x="${padding.left}" y="${
+		height - padding.bottom + 20
+	}" text-anchor="middle" fill="#1e293b" font-family="Arial, sans-serif" font-size="10">${
 		new Date(sortedHistory[0].recordedAt).getMonth() + 1
 	}/${new Date(sortedHistory[0].recordedAt).getDate()}</text>
-	   <text x="${width - padding.right}" y="${height - padding.bottom + 20}" text-anchor="middle" fill="#64748b" font-size="10">${
+	   <text x="${width - padding.right}" y="${
+		height - padding.bottom + 20
+	}" text-anchor="middle" fill="#1e293b" font-family="Arial, sans-serif" font-size="10">${
 		new Date(sortedHistory[sortedHistory.length - 1].recordedAt).getMonth() + 1
 	}/${new Date(sortedHistory[sortedHistory.length - 1].recordedAt).getDate()}</text>
 
