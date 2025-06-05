@@ -107,15 +107,13 @@ export async function handleMyItemsCommand(ctx: CommandContext<Context>, db: Ret
 		message += ` | 💰 Current: ${formatIDR(item.currentPrice)}`;
 
 		if (lowestPriceRecord) {
-			const priceDiff = item.currentPrice - lowestPriceRecord.price;
-			if (priceDiff < 0) {
+			if (item.currentPrice > lowestPriceRecord.price) {
 				message += ` | 📉 Low: ${formatIDR(lowestPriceRecord.price)} (${new Date(lowestPriceRecord.recordedAt).toLocaleDateString()})`;
 			}
 		}
 
 		if (highestPriceRecord) {
-			const priceDiff = item.currentPrice - highestPriceRecord.price;
-			if (priceDiff > 0) {
+			if (item.currentPrice < highestPriceRecord.price) {
 				message += ` | 📈 High: ${formatIDR(highestPriceRecord.price)} (${new Date(highestPriceRecord.recordedAt).toLocaleDateString()})`;
 			}
 		}
