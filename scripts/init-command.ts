@@ -39,4 +39,8 @@ await bot.api.setMyCommands([
 		command: 'edit',
 		description: 'Update target price for an item - usage: /edit [id] [new_target_price]',
 	},
+	{
+		command: "chart",
+		description: "Generate a price history chart for an item - usage: /chart [id]",
+	}
 ]);

@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
 import { setupBotMiddleware } from './handlers/middleware';
 import { handleStartCommand, handleHelpCommand } from './handlers/user';
-import { handleAddCommand, handleMyItemsCommand, handleDeleteCommand, handleEditCommand } from './handlers/items';
+import { handleAddCommand, handleMyItemsCommand, handleDeleteCommand, handleEditCommand, handleChartCommand } from './handlers/items';
 import { scheduledHandler } from './handlers/scheduled';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -33,6 +33,7 @@ app
 		bot.command('myitems', (ctx) => handleMyItemsCommand(ctx, db));
 		bot.command('delete', (ctx) => handleDeleteCommand(ctx, db));
 		bot.command('edit', (ctx) => handleEditCommand(ctx, db));
+		bot.command('chart', (ctx) => handleChartCommand(ctx, db));
 		bot.command('help', (ctx) => handleHelpCommand(ctx));
 
 		return webhookCallback(bot, 'hono')(c);

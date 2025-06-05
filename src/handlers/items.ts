@@ -1,11 +1,13 @@
-import { CommandContext, Context } from 'grammy';
+import { CommandContext, Context, InputFile } from 'grammy';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, count, desc } from 'drizzle-orm';
 import { formatIDR } from '../utils/priceFormatter';
 import { items, priceHistory, users } from '../db/schema';
+import { and, gt, asc } from 'drizzle-orm';
 import { scrapeTokopedia, isValidTokopediaUrl } from '../scrapers/tokopedia';
 import { BotError } from './middleware';
 import { generateId, generateShortId, truncate } from '../utils/idGenerator';
+import { generatePriceChart } from '../utils/chartGenerator';
 
 /**
  * Handles the /add command - adding new items to track
@@ -183,4 +185,50 @@ export async function handleEditCommand(ctx: CommandContext<Context>, db: Return
 	}
 
 	await ctx.reply(response);
+}
+
+/**
+ * Handles the /chart command - generates price history chart for an item
+ */
+export async function handleChartCommand(ctx: CommandContext<Context>, db: ReturnType<typeof drizzle>) {
+	const userId = ctx.from?.id.toString();
+	if (!userId) throw new BotError('Missing user ID', '❌ Unable to identify your account.');
+
+	const shortId = ctx.match.trim().toUpperCase();
+	if (!shortId) {
+		throw new BotError('Missing ID', 'Please provide item ID. Usage: /chart <item-id>');
+	}
+
+	// Validate item exists and belongs to user
+	const item = await db.select().from(items).where(eq(items.shortId, shortId)).get();
+	if (!item) throw new BotError('Not found', '❌ Item not found');
+	if (item.userId !== userId) throw new BotError('Permission denied', '❌ You can only view charts for your own items');
+
+	// Fetch price history (last 30 days)
+	const thirtyDaysAgo = new Date();
+	thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+	const history = await db
+		.select()
+		.from(priceHistory)
+		.where(and(
+			eq(priceHistory.itemId, item.id),
+			gt(priceHistory.recordedAt, thirtyDaysAgo)
+		))
+		.orderBy(asc(priceHistory.recordedAt))
+		.all();
+
+	if (history.length === 0) {
+		throw new BotError('No data', '❌ No price history available for this item');
+	}
+
+	// Generate PNG chart
+	const chartPng = await generatePriceChart(history);
+
+	// Send as document since Telegram doesn't support inline SVG
+	const file = new InputFile(chartPng, `chart_${shortId}.png`);
+
+	await ctx.replyWithPhoto(file, {
+		caption: `📊 Price history for ${truncate(item.title)}`
+	});
 }
