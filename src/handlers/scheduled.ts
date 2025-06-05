@@ -50,19 +50,31 @@ export const scheduledHandler: ExportedHandlerScheduledHandler<Env> = async (con
 					recordedAt: now,
 				});
 
-				// Check if price is lowest ever
-				const priceHistoryRecords = await db.select().from(priceHistory).where(eq(priceHistory.itemId, item.id));
+				// Check price conditions for notifications
+				const priceHistoryRecords = await db
+					.select()
+					.from(priceHistory)
+					.where(eq(priceHistory.itemId, item.id));
 
-				const minPrice = priceHistoryRecords.reduce((min, record) => Math.min(min, record.price), scraped.price);
+				// Get historical min price
+				const historicalMin = priceHistoryRecords.length > 0
+					? Math.min(...priceHistoryRecords.map(r => r.price))
+					: Infinity;
 
 				let message = '';
 				if (item.targetPrice && scraped.price <= item.targetPrice) {
 					message = `✅ Price alert! ${truncate(item.title)}: ${formatIDR(scraped.price)} (target: ${formatIDR(item.targetPrice)})`;
-				} else if (scraped.price < minPrice) {
-					message = `📉 Lowest price! ${truncate(item.title)}: ${formatIDR(scraped.price)}`;
+				} else if (scraped.price < historicalMin) {
+					message = `📉 Lowest price ever! ${truncate(item.title)}: ${formatIDR(scraped.price)}`;
+				} else if (scraped.price < item.currentPrice) {
+					message = `🔽 Price dropped! ${truncate(item.title)}: ${formatIDR(scraped.price)} (was ${formatIDR(item.currentPrice)})`;
 				}
 				if (message) {
-					await bot.api.sendMessage(item.userId, message);
+					try {
+						await bot.api.sendMessage(item.userId, message);
+					} catch (error) {
+						console.error(`Failed to send notification for item ${item.id}:`, error);
+					}
 				}
 			} catch (error) {
 				console.error(`Failed to process item ${item.id}:`, error);
